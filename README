@@ -1,0 +1,21 @@
+This repository contains the sources for building one of 3 ubuntu deb packages 
+that together make up the dynamic router lite project (DynrLite-II).
+
+The DynrLite-II project allows placing a so called dynamic router between a lan
+that contains workstations and a lan that contains internet gateways. The dynamic 
+router has a simple web interface that lets the users on the workstations pick
+or switch what gateway they want to use. 
+
+The dynr-pbdns package provides the code for a policy based dns forwarding daemon.
+This daemon will, in sync with how the policy based routing is configured forward
+DNS queries to the gateway any given workstation is using at that moment.
+This gateway should have a DNS service configured for dynr-pbdns to work.
+The daemon is written in C++ and uses the boost::asio library at its core.
+
+Other components of the DynrLite-II project are dynr-pbrouting (A policy based routing core)
+and dynr-web (the web interface),
+
+All DynrLite-II packages are distributed by the dutch national police agency (KLPD) under
+the LGPL open source software licence.
+
+NOTE: At this moment this repository is still just a placeholder.
