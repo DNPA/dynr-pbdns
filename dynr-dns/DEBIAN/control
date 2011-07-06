@@ -1,0 +1,16 @@
+Package: dynr-dns
+Section: net
+Priority: extra
+Essential: no
+Version: 0.1.0
+Architecture: all
+Installed-Size: 10
+Depends: python-dbus,python-daemon,dbus,upstart,dynr-pbrouting
+Recommends: dynr-web
+Maintainer: Rob@KLPD <rob@dnpa.nl>
+Description: The dns subsystem of the dynr (dynamic router) system.
+ The dynr (dynamic router) is a simple web based gateway selection tool. 
+ This package provides the DNS proxy and a related dbus service for implementing
+ the application level policy based NAT and policy based forwarding needed for dynr 
+ to work. The dbus service is provided in order to allow the dynr-web subsystem to 
+ administer the per workstation DNS policy.  

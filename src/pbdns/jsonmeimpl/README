@@ -1,0 +1,5 @@
+This directory contains the glib json implementation for processing the /ect/pbrconfig.json config file.
+The glib json implementation was used for this project to accomodate the requirement of running on the 
+10.4 LTS server version of Ubuntu that has a rather old (1.40) version of boost. The boost json library
+was first introduced in 1.41, so using boost wasn't an option. Once there is a new LTS release for ubuntu
+we may want to replace the implementation in this dir with one that uses the boost json library instead. 

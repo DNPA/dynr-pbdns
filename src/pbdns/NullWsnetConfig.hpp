@@ -1,0 +1,19 @@
+#ifndef _DYNR_NULL_WSNET_CONFIG_HPP
+#define _DYNR_NULL_WSNET_CONFIG_HPP
+#include <string>
+#include "AbstractWsnetConfig.hpp"
+#include "Peer.hpp"
+
+namespace dynr {
+  class NullWsnetConfig: public AbstractWsnetConfig  {
+      Peer mNullPeer;
+    public:
+      operator bool(){ return false;}
+      operator std::string() { return "";}
+      Peer workstation(size_t wsnum) { return mNullPeer;}
+      Peer workstation(std::string ip) { return mNullPeer;}
+      Peer gateway(size_t gwnum) { return mNullPeer;}
+      Peer gateway(std::string ip) { return mNullPeer;}
+  };
+}
+#endif
