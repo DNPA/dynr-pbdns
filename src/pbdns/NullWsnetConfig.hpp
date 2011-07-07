@@ -5,6 +5,7 @@
 #include "Peer.hpp"
 
 namespace dynr {
+  //A null object that gets returned by the config when queried for a non existing workstation network config.
   class NullWsnetConfig: public AbstractWsnetConfig  {
       Peer mNullPeer;
     public:

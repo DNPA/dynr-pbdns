@@ -7,6 +7,8 @@
 #include <json-me.hpp>
 
 namespace dynr {
+  //The Json-Me implementation of the per client network config object.
+  //See AbstractWsnetConfig for more info on methods.
   class JsonMeWsnetConfig:public AbstractWsnetConfig  {
         std::string mWsnetIp;
         std::string mGwNetIp;

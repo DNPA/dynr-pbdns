@@ -4,6 +4,7 @@
 #include <stdexcept>
 
 namespace dynr {
+  //A parse exception for the config.
   class PbrConfigException: public std::exception {
       std::string mErrMsg;
     public:

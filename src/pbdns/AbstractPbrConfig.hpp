@@ -4,6 +4,7 @@
 #include "AbstractWsnetConfig.hpp"
 #include "Peer.hpp"
 namespace dynr {
+  //Interface for access to the pollicy based routing config in a dns subsystem relevant way.
   class AbstractPbrConfig {
     public:
       virtual ~AbstractPbrConfig(){} //Virtual destructor 

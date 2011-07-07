@@ -10,6 +10,7 @@
 #include "JsonMeWsnetConfig.hpp"
 
 namespace dynr {
+  //Json-Me implementation of the top level config object. See AbstractPbrConfig for more info on the interface.
   class JsonMeConfig: public AbstractPbrConfig {
       Peer mNullPeer;
       jsonme::JsonMeLib mJsonLib;
