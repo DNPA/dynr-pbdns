@@ -48,9 +48,14 @@ namespace dynr {
             std::string serverip=match["serverip"];
             return Peer(myip,serverip);      
          } else {
-            std::string tmp1 = boost::trim_left_copy_if(ucdnsname,boost::is_any_of("ABCDEFGHIJKLMNOPQRSTOVWXYZ0123456789-"));
+            std::string tmp1 = boost::trim_left_copy_if(ucdnsname,boost::is_any_of("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-"));
             std::string trimmed = boost::trim_left_copy_if(tmp1,boost::is_any_of("."));
-            return (*this)[trimmed];
+            if (ucdnsname.size() > trimmed.size()) {
+                return (*this)[trimmed];
+            } else {
+                Peer rval;
+                return rval;
+            }
          }
       }
 }

@@ -12,6 +12,8 @@ namespace dynr {
         std::string mGwNetIp;
         u_int32_t mWsNet;
         u_int32_t mGwNet;
+        u_int32_t mWsNetMask;
+        u_int32_t mGwNetMask;
         bool mValid;
         std::map<size_t, jsonme::Node> mGwMap; 
     public:

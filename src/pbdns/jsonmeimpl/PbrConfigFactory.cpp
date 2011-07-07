@@ -1,5 +1,4 @@
 #include <string> 
-#include <iostream>
 #include "../PbrConfigFactory.hpp"
 #include "../AbstractPbrConfig.hpp"
 #include "JsonMeConfig.hpp"
