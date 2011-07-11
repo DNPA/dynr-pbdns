@@ -1,64 +1,41 @@
-#include <boost/shared_ptr.hpp>
+#include <boost/asio.hpp>
 #include <iostream>
-#include "AbstractPbrConfig.hpp"
-#include "PbrConfigFactory.hpp"
-#include "Peer.hpp"
-#include "PbRoutingCore.hpp"
 #include <boost/lexical_cast.hpp>
+#include "MainServer.hpp"
+#include "UnPrivileged.hpp"
 
-std::string peerString(dynr::Peer &peer){
-  bool valid=peer;
-  if (valid) {
-    std::string peerip=peer;
-    std::string bestip=peer.myBestIp();
-    std::string rval=std::string("[") + bestip + ">" + peerip + "]" ;
-    return  rval;
+int core_loop_unpriv(boost::asio::io_service &io_service,size_t interfaceno,boost::asio::ip::udp::socket &serversocket) {
+  UnPrivileged unpriv;
+  if (unpriv()) {
+    if (unpriv.is_child()) {
+        MainServer server(io_service,interfaceno,serversocket,"/etc/pbrouting.json");
+        io_service.run();
+    } else {
+      std::cout << "Forked an unpriviledged server." << std::endl;
+    }
+  } else {
+    std::cerr << "ERROR: Problem dropping priviledges" << std::endl;
+    return 1;
   }
-  return "[NON]";
-}
-
-void testdomain(dynr::PbRoutingCore &routingcore, size_t workstation, std::string domain){
-  dynr::Peer dns1=routingcore.lookup(workstation,domain);
-  std::cerr << "      " << domain << "\t forward to  \t" << peerString(dns1) << std::endl;
-};
-
-void runtests(dynr::PbRoutingCore &routingcore,size_t workstation) {
-  std::cerr << "  workstation " << workstation << std::endl;
-  std::cerr << "    internet " << std::endl;
-  testdomain(routingcore,workstation,"www.appelgebak.google.com");
-  testdomain(routingcore,workstation,"99.9.109.194.in-addr.arpa");
-  std::cerr << "    vpn " << std::endl;
-  testdomain(routingcore,workstation,"www.frambozenpudding.vpn");
-  testdomain(routingcore,workstation,"10.10.10.10.in-addr.arpa");
-  std::cerr << "    local " << std::endl;
-  testdomain(routingcore,workstation,"www.kersenmetroom.local");
-  testdomain(routingcore,workstation,"40.1.168.192.in-addr.arpa");
+  return 0;
 }
 
 int main (int argc, char ** argv) {
-  if (argc < 2) {
+  if (argc < 3) {
+    std::cerr << "Error: Don't call this program directly. It should be started by pbdnsstartup.py" << std::endl;
     return 1;
   }
-  size_t interfaceno=boost::lexical_cast<size_t>(argv[1]);
-  boost::shared_ptr<dynr::AbstractPbrConfig> config(dynr::PbrConfigFactory::createPbrConfig("/etc/pbrouting.json"));
-  dynr::PbRoutingCore routingcore(config,interfaceno);
-  size_t workstation=56;
-  size_t referencews=100;
-  std::cerr << "Running without policies" << std::endl;
-  runtests(routingcore,workstation);
-  runtests(routingcore,referencews);
-  for (size_t gateway=1;gateway < 3; gateway++) {
-    if (routingcore.updateRouting(workstation,gateway)) {
-       std::cerr << "Changed routing for workstation to " << gateway << std::endl;
-    } else {
-       std::cerr << "FAILED to change routing for workstation to " << gateway << std::endl;
-    }
-    runtests(routingcore,workstation);
-    runtests(routingcore,referencews);
+  try {
+    size_t interfaceno=boost::lexical_cast<size_t>(argv[1]);
+    std::string listenip=argv[2];
+    //Create the listen socket before we drop priviledges.
+    boost::asio::io_service io_service;
+    boost::asio::ip::udp::endpoint ep(boost::asio::ip::udp::v4(),53);
+    boost::asio::ip::udp::socket serversocket(io_service, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 53));
+    //Run the main loop unpriviledged or croak.
+    return core_loop_unpriv(io_service,interfaceno,serversocket);
+  } catch (std::exception& e) {
+     std::cerr << "ERROR: unexpected exception: " << e.what() << std::endl;
+     return 1;
   }
-  routingcore.clear(workstation);
-  std::cerr << "Cleared policy for workstation." << std::endl;
-  runtests(routingcore,workstation);
-  runtests(routingcore,referencews);
-  return 0;
 }
