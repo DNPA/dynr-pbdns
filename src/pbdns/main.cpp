@@ -30,8 +30,8 @@ int main (int argc, char ** argv) {
     std::string listenip=argv[2];
     //Create the listen socket before we drop priviledges.
     boost::asio::io_service io_service;
-    boost::asio::ip::udp::endpoint ep(boost::asio::ip::udp::v4(),53);
-    boost::asio::ip::udp::socket serversocket(io_service, boost::asio::ip::udp::endpoint(boost::asio::ip::udp::v4(), 53));
+    boost::asio::ip::udp::endpoint ep(boost::asio::ip::address_v4::from_string(listenip.c_str()),53);
+    boost::asio::ip::udp::socket serversocket(io_service, ep);
     //Run the main loop unpriviledged or croak.
     return core_loop_unpriv(io_service,interfaceno,serversocket);
   } catch (std::exception& e) {

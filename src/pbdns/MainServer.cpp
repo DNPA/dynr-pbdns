@@ -3,6 +3,8 @@
 #include "PbrConfigFactory.hpp"
 #include "MainServer.hpp"
 #include <iostream>
+
+
 void MainServer::server_start_receive() {
   mServerSocket.async_receive_from( boost::asio::buffer(mRecvBuffer),
                                      mRemoteClient,
@@ -18,11 +20,15 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
      u_int32_t clientip=mRemoteClient.address().to_v4().to_ulong(); 
      u_int32_t clientno = mRoutingCore.asNum(clientip);    
      std::string queryname=queryString(insize);
-     std::cerr << "reveived something from " << clientno <<  " for '" << queryname << "'" <<  std::endl;
      dynr::Peer dns=mRoutingCore.lookup(clientno,queryname);
      std::string dnsip=dns;
      std::string bestip=dns.myBestIp();
-     std::cerr << "  We should forward this to " << dnsip << " using " << bestip << std::endl;
+     DnsForwarder *forwarder=mForwarders[bestip];
+     if (forwarder == 0) {
+         DnsForwarder *forwarder=new DnsForwarder(mIoService,mServerSocket,bestip);
+         mForwarders[bestip]=forwarder;
+     }
+     forwarder->forward(mRecvBuffer,insize,dnsip);
   }
   server_start_receive();
 }
@@ -49,6 +55,13 @@ std::string MainServer::queryString(std::size_t packetsize){
   return rval;
 }
 
-MainServer::MainServer(boost::asio::io_service& io_service,size_t interfaceno,boost::asio::ip::udp::socket &serversocket, std::string configpath):mServerSocket(serversocket),mConfig(dynr::PbrConfigFactory::createPbrConfig(configpath)),mRoutingCore(mConfig,interfaceno) {
+MainServer::MainServer(boost::asio::io_service& io_service,size_t interfaceno,boost::asio::ip::udp::socket &serversocket, std::string configpath):mIoService(io_service),mServerSocket(serversocket),mConfig(dynr::PbrConfigFactory::createPbrConfig(configpath)),mRoutingCore(mConfig,interfaceno) {
   server_start_receive();
+}
+
+MainServer::~MainServer() {
+  for (std::map<std::string, DnsForwarder * >::iterator it=mForwarders.begin(); it != mForwarders.end(); ++it){
+    delete it->second;
+  }
+    
 }
