@@ -14,6 +14,7 @@ class MainServer {
     dynr::PbRoutingCore mRoutingCore;
     std::map<std::string, DnsForwarder * > mForwarders; 
     std::string queryString(size_t psize);
+    std::string dnsid(size_t psize);
     void server_start_receive();
     void handle_receive_from_client(const boost::system::error_code& error,std::size_t insize);   
   public:

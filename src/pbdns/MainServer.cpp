@@ -1,4 +1,5 @@
 #include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
 #include <string>
 #include "PbrConfigFactory.hpp"
 #include "MainServer.hpp"
@@ -20,6 +21,10 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
      u_int32_t clientip=mRemoteClient.address().to_v4().to_ulong(); 
      u_int32_t clientno = mRoutingCore.asNum(clientip);    
      std::string queryname=queryString(insize);
+     std::string queryid="";
+     if (insize > 1) {
+       std::string queryid=boost::lexical_cast<std::string>(mRecvBuffer[0]) + ":" + boost::lexical_cast<std::string>(mRecvBuffer[1]) + ":" + queryname;
+     } 
      dynr::Peer dns=mRoutingCore.lookup(clientno,queryname);
      std::string dnsip=dns;
      std::string bestip=dns.myBestIp();
@@ -28,7 +33,7 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
          DnsForwarder *forwarder=new DnsForwarder(mIoService,mServerSocket,bestip);
          mForwarders[bestip]=forwarder;
      }
-     forwarder->forward(mRecvBuffer,insize,dnsip);
+     forwarder->forward(mRecvBuffer,insize,dnsip,queryid,clientip);
   }
   server_start_receive();
 }
