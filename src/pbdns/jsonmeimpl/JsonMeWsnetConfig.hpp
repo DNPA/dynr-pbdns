@@ -22,6 +22,7 @@ namespace dynr {
         JsonMeWsnetConfig(jsonme::Node clientnet,jsonme::Node gateways,jsonme::Node routers);
         operator bool();
         operator std::string() ;
+        operator u_int32_t() ;
         Peer workstation(size_t wsnum);
         Peer workstation(std::string ip);
         Peer gateway(size_t gwnum);

@@ -27,22 +27,12 @@ namespace dynr {
        dynr::Peer parkpeer=mWsNetConfig.gateway(parkip);
        return parkpeer;
     }
-    Peer PbRoutingCore::lookup(std::string wsip,std::string dnsname) {
-      dynr::Peer localdns=(*mConfig)[dnsname];
-      if (localdns==true) {
-         return localdns;
-      }
-      size_t gwnum=mPolicies[0]; //FIXME: we should fix this so that we can lookup by IP.
-      dynr::Peer gw=mWsNetConfig.gateway(gwnum);
-      if (gw == true) {
-        return gw;
-      }
-      std::string parkip=mConfig->parkIp();
-      dynr::Peer parkpeer=mWsNetConfig.gateway(parkip);
-      return parkpeer;
-    }
     void PbRoutingCore::clear(size_t wsnum) {
        mPolicies[wsnum]=0;
        mPolicies.erase(wsnum);
+    }
+    u_int32_t PbRoutingCore::asNum(u_int32_t ip){
+       u_int32_t reversemask=mWsNetConfig;
+       return ip & reversemask;
     }
 }

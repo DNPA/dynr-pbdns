@@ -11,6 +11,7 @@ namespace dynr {
     public:
       operator bool(){ return false;}
       operator std::string() { return "";}
+      operator u_int32_t() { return 0;}
       Peer workstation(size_t wsnum) { return mNullPeer;}
       Peer workstation(std::string ip) { return mNullPeer;}
       Peer gateway(size_t gwnum) { return mNullPeer;}

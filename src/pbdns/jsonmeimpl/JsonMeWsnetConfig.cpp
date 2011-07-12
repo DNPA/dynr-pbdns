@@ -2,6 +2,7 @@
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <sys/types.h>
 #include <iostream>
 namespace dynr {
         JsonMeWsnetConfig::JsonMeWsnetConfig(jsonme::Node clientnet,jsonme::Node gateways,jsonme::Node routers):mValid(true) {
@@ -80,6 +81,10 @@ namespace dynr {
         }
         JsonMeWsnetConfig::operator std::string(){
            return mWsnetIp;
+        }
+        
+        JsonMeWsnetConfig::operator u_int32_t() {
+          return ~(mWsNetMask); 
         }
         Peer JsonMeWsnetConfig::workstation(size_t wsnum) {
            if (mWsNetMask & ((u_int32_t) wsnum)) {
