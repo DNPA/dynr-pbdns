@@ -3,12 +3,14 @@
 #include <boost/lexical_cast.hpp>
 #include "MainServer.hpp"
 #include "UnPrivileged.hpp"
+#include "DnsResponse.hpp"
 
-int core_loop_unpriv(boost::asio::io_service &io_service,size_t interfaceno,boost::asio::ip::udp::socket &serversocket) {
+int core_loop_unpriv(boost::asio::io_service &io_service,size_t interfaceno,boost::asio::ip::udp::socket &serversocket,std::string yesip) {
   UnPrivileged unpriv;
   if (unpriv()) {
     if (unpriv.is_child()) {
-        MainServer server(io_service,interfaceno,serversocket,"/etc/pbrouting.json");
+        DnsResponse responsehelper(yesip,"127.0.0.1");
+        MainServer server(io_service,interfaceno,serversocket,"/etc/pbrouting.json",responsehelper);
         io_service.run();
     } else {
       std::cout << "Forked an unpriviledged server." << std::endl;
@@ -33,7 +35,7 @@ int main (int argc, char ** argv) {
     boost::asio::ip::udp::endpoint ep(boost::asio::ip::address_v4::from_string(listenip.c_str()),53);
     boost::asio::ip::udp::socket serversocket(io_service, ep);
     //Run the main loop unpriviledged or croak.
-    return core_loop_unpriv(io_service,interfaceno,serversocket);
+    return core_loop_unpriv(io_service,interfaceno,serversocket,listenip);
   } catch (std::exception& e) {
      std::cerr << "ERROR: unexpected exception: " << e.what() << std::endl;
      return 1;
