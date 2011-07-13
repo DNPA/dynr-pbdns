@@ -25,8 +25,31 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
      std::string queryname=queryString(insize);
      std::string queryid="";
      if (insize > 1) {
-       if (boost::regex_match(queryname,mCommandRegex)) {
-           std::cerr << "We got a command, lets refuse it for now." << std::endl;     
+       boost::smatch what;
+       if (boost::regex_match(queryname,what,mCommandRegex,boost::match_extra)) {
+           bool ok=true;
+           if (what.size() > 1) {
+             size_t ws=0;
+             size_t gw=0;
+             try {
+                ws=boost::lexical_cast<size_t>(what[0]);
+                gw=boost::lexical_cast<size_t>(what[1]);
+             } catch (std::exception& e) {ok=false;}
+             if (ok) {
+                std::cerr << "Command has right form, setting gateway for workstation " << ws << " to " << gw << std::endl;
+                //FIXME, there is no check on the IP of the controller and the magicdomain isn't a secret. 
+                //Either only the local IP should be allowed, or we should create an unguesable magic domain.
+                ok=mRoutingCore.updateRouting(ws,gw);
+                if (ok) {
+                   std::cerr << "Command succeeded." << std::endl;
+                } else {
+                   std::cerr << "Command failed." << std::endl;
+                }
+             }
+           } else {
+             ok=false;
+           }
+           std::cerr << "Sending response " << ok << std::endl;
            mServerSocket.async_send_to(boost::asio::buffer(mResponseHelper.reply(mRecvBuffer,insize,false),
                                                            insize+14),
                                        mRemoteClient,
@@ -92,7 +115,7 @@ MainServer::MainServer(boost::asio::io_service& io_service,
                                                     mConfig(dynr::PbrConfigFactory::createPbrConfig(configpath)),
                                                     mRoutingCore(mConfig,interfaceno),
                                                     mResponseHelper(responsehelper),
-                                                    mCommandRegex("^ws[1-9][0-9]{1,7}-gw[1-9][0-9]{1,4}+\\.magicdomain\\.internal$") 
+                                                    mCommandRegex("^ws([1-9][0-9]{1,7})-gw([1-9][0-9]{1,4})\\.magicdomain\\.internal$") 
 {
   server_start_receive();
 }
