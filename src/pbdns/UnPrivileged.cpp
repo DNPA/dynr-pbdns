@@ -18,7 +18,7 @@ UnPrivileged::UnPrivileged():mDroppedPriv(false),mIsChild(false) {
           pid_t pid;
           pid = fork();
           if (pid == 0) {
-            std::cerr << "Child here." << std::endl;
+            std::cerr << "pbdnsd started." << std::endl;
             setsid();
             close(0);
             close(1);

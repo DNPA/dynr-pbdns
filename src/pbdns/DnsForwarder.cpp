@@ -2,9 +2,7 @@
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
 #include "DnsForwarder.hpp"
- //   boost::asio::ip::udp::socket mProxySocket;
- //   boost::asio::ip::udp::socket &mServerSocket;
- //   boost::asio::io_service &mIoService;
+#include <iostream>
 void DnsForwarder::client_start_receive(){
    mProxySocket.async_receive_from( boost::asio::buffer(mRecvBuffer),
                                      mRemoteServer,
@@ -17,8 +15,8 @@ void DnsForwarder::client_start_receive(){
 
 void DnsForwarder::handle_receive_from_real_server(const boost::system::error_code& error,std::size_t packetsize){
   if (!error || error == boost::asio::error::message_size) {
-    //FIXME: we need a body here, can't implement untill we keep track in 'forward'
     if (packetsize > 13) {
+      std::cerr << "Received DNS response." << std::endl;
       std::string queryid=boost::lexical_cast<std::string>(mRecvBuffer[0]) + ":" + boost::lexical_cast<std::string>(mRecvBuffer[1]) + ":";
       for (size_t index=12;(index<(packetsize-2)) && (mRecvBuffer[index] != 0 ) ;index=index+mRecvBuffer[index]+1) {
          size_t tokenlen=mRecvBuffer[index] < packetsize? mRecvBuffer[index] : packetsize;
@@ -31,15 +29,21 @@ void DnsForwarder::handle_receive_from_real_server(const boost::system::error_co
            }
          }
       }
-      u_int32_t clientip=mReturnAddrMap[queryid];
-      mServerSocket.async_send_to(boost::asio::buffer(mRecvBuffer,packetsize),
-                                  boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4(clientip),53), /* FIXME: this is not right, we should have stored the original client UDP port in 'forward'! */
+      std::cerr << "Looking up query id '" << queryid << "'" << std::endl;
+      if (mReturnAddrMap.hasKey(queryid)) {
+        std::cerr << "Found a match, forwarding response to workstation." << std::endl;
+        boost::asio::ip::udp::endpoint clientendpoint=mReturnAddrMap[queryid];
+        mServerSocket.async_send_to(boost::asio::buffer(mRecvBuffer,packetsize),
+                                  clientendpoint,
                                   boost::bind(&DnsForwarder::handle_send,
                                               this,
                                               boost::asio::placeholders::error,
                                               boost::asio::placeholders::bytes_transferred
                                              )
                                  )  ; 
+      } else {
+         std::cerr << "No entry for query id '" << queryid << "' found, ignoring response!" << std::endl;
+      }
     }
   }
   client_start_receive();
@@ -50,9 +54,8 @@ DnsForwarder::DnsForwarder(boost::asio::io_service &service,boost::asio::ip::udp
 {
   client_start_receive();  
 }
-void DnsForwarder::forward(boost::array<char,65536 >  &packet, size_t psize,std::string dnsip,std::string id,u_int32_t client){
+void DnsForwarder::forward(boost::array<char,65536 >  &packet, size_t psize,std::string dnsip,std::string id,boost::asio::ip::udp::endpoint client){
    mReturnAddrMap[id]=client;
-   //FIXME: need to keep track not only of the client IP but also its port!
    mProxySocket.async_send_to(boost::asio::buffer(packet,psize),
                               boost::asio::ip::udp::endpoint(boost::asio::ip::address_v4::from_string(dnsip.c_str()),53),
                               boost::bind(&DnsForwarder::handle_send, 

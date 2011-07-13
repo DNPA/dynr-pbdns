@@ -18,22 +18,30 @@ void MainServer::server_start_receive() {
 
 void MainServer::handle_receive_from_client(const boost::system::error_code& error,std::size_t insize/*bytes_transferred*/) {
   if (!error || error == boost::asio::error::message_size) {
+     std::cerr << "Received packet from client." << std::endl;
      u_int32_t clientip=mRemoteClient.address().to_v4().to_ulong(); 
      u_int32_t clientno = mRoutingCore.asNum(clientip);    
      std::string queryname=queryString(insize);
      std::string queryid="";
      if (insize > 1) {
        std::string queryid=boost::lexical_cast<std::string>(mRecvBuffer[0]) + ":" + boost::lexical_cast<std::string>(mRecvBuffer[1]) + ":" + queryname;
-     } 
-     dynr::Peer dns=mRoutingCore.lookup(clientno,queryname);
-     std::string dnsip=dns;
-     std::string bestip=dns.myBestIp();
-     DnsForwarder *forwarder=mForwarders[bestip];
-     if (forwarder == 0) {
+       std::cerr << "Query id = '" << queryid << "'" << std::endl;
+       dynr::Peer dns=mRoutingCore.lookup(clientno,queryname);
+       std::string dnsip=dns;
+       std::string bestip=dns.myBestIp();
+       DnsForwarder *forwarder=mForwarders[bestip];
+       if (forwarder == 0) {
+         std::cerr << "Creating new forwarder for " << bestip << std::endl;
          DnsForwarder *forwarder=new DnsForwarder(mIoService,mServerSocket,bestip);
          mForwarders[bestip]=forwarder;
+       } else {
+         std::cerr << "Using existing forwarder for " << bestip << std::endl;
+       }
+       std::cerr << "Forwarding query to " << dnsip << std::endl;
+       forwarder->forward(mRecvBuffer,insize,dnsip,queryid,mRemoteClient);
+     } else {
+        std::cerr << "Tiny packet, unable to get uniqueu id, ignoring." << std::endl;
      }
-     forwarder->forward(mRecvBuffer,insize,dnsip,queryid,clientip);
   }
   server_start_receive();
 }
