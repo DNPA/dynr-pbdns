@@ -19,6 +19,7 @@ class MainServer {
     std::string dnsid(size_t psize);
     DnsResponse &mResponseHelper;
     boost::regex mCommandRegex;
+    boost::regex mCommand2Regex;
     void server_start_receive();
     void handle_receive_from_client(const boost::system::error_code& error,std::size_t insize);   
     void handle_send(const boost::system::error_code& err,std::size_t s){}

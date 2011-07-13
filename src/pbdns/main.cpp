@@ -11,7 +11,13 @@ int core_loop_unpriv(boost::asio::io_service &io_service,size_t interfaceno,boos
     if (unpriv.is_child()) {
         DnsResponse responsehelper(yesip,"127.0.0.1");
         MainServer server(io_service,interfaceno,serversocket,"/etc/pbrouting.json",responsehelper);
-        io_service.run();
+        try {
+            io_service.run();
+        } catch (std::exception& e) {
+          std::cerr << "ERROR: unexpected exception: " << e.what() << std::endl;
+        } catch (...) {
+          std::cerr << "ERROR: unexpected non-exception: "<< std::endl;
+        }
     } else {
       std::cout << "Forked an unpriviledged server." << std::endl;
     }

@@ -23,31 +23,36 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
      u_int32_t clientip=mRemoteClient.address().to_v4().to_ulong(); 
      u_int32_t clientno = mRoutingCore.asNum(clientip);    
      std::string queryname=queryString(insize);
+     std::cerr << "queryname = '" << queryname << "'" << std::endl;
      std::string queryid="";
      if (insize > 1) {
        boost::smatch what;
-       if (boost::regex_match(queryname,what,mCommandRegex,boost::match_extra)) {
+       if ((boost::regex_match(queryname,what,mCommandRegex,boost::match_extra))|| (boost::regex_match(queryname,what,mCommandRegex,boost::match_extra))) {
            bool ok=true;
-           if (what.size() > 1) {
-             size_t ws=0;
-             size_t gw=0;
-             try {
-                ws=boost::lexical_cast<size_t>(what[0]);
-                gw=boost::lexical_cast<size_t>(what[1]);
-             } catch (std::exception& e) {ok=false;}
-             if (ok) {
-                std::cerr << "Command has right form, setting gateway for workstation " << ws << " to " << gw << std::endl;
-                //FIXME, there is no check on the IP of the controller and the magicdomain isn't a secret. 
-                //Either only the local IP should be allowed, or we should create an unguesable magic domain.
-                ok=mRoutingCore.updateRouting(ws,gw);
+           size_t ws=0;
+           size_t gw=0;
+           try {
+              ws=boost::lexical_cast<size_t>(what[0]);
+              if (what.size() == 2) {
+                 gw=boost::lexical_cast<size_t>(what[1]);
+              }
+           } catch (std::exception& e) {
+              std::cerr << "Problem lexically casting workstation or gateway number." << std::endl;
+              ok=false;
+           }
+           if (ok) {
+                if (what.size() == 2) {
+                  std::cerr << "Asking routing core to update gateway for " << ws << " to " << gw << std::endl;
+                  ok=mRoutingCore.updateRouting(ws,gw);
+                } else {
+                  std::cerr << "Flushing gateway for " << ws << std::endl;
+                  mRoutingCore.clear(ws);
+                }
                 if (ok) {
                    std::cerr << "Command succeeded." << std::endl;
                 } else {
                    std::cerr << "Command failed." << std::endl;
                 }
-             }
-           } else {
-             ok=false;
            }
            std::cerr << "Sending response " << ok << std::endl;
            mServerSocket.async_send_to(boost::asio::buffer(mResponseHelper.reply(mRecvBuffer,insize,false),
@@ -61,7 +66,7 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
                                        );
        } else {
            std::cerr << "Not a command, forwarding." << std::endl;
-           std::string queryid=boost::lexical_cast<std::string>(mRecvBuffer[0]) + ":" + boost::lexical_cast<std::string>(mRecvBuffer[1]) + ":" + queryname;
+           std::string queryid=boost::lexical_cast<std::string>((unsigned int) (unsigned char) mRecvBuffer[0]) + ":" + boost::lexical_cast<std::string>((unsigned int) (unsigned char) mRecvBuffer[1]) + ":" + queryname;
            std::cerr << "Query id = '" << queryid << "'" << std::endl;
            dynr::Peer dns=mRoutingCore.lookup(clientno,queryname);
            std::string dnsip=dns;
@@ -76,6 +81,7 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
            }
            std::cerr << "Forwarding query to " << dnsip << std::endl;
            forwarder->forward(mRecvBuffer,insize,dnsip,queryid,mRemoteClient);
+           std::cerr << "Done forwarding." << std::endl;
        }
      } else {
         std::cerr << "Tiny packet, unable to get uniqueu id, ignoring." << std::endl;
@@ -115,7 +121,8 @@ MainServer::MainServer(boost::asio::io_service& io_service,
                                                     mConfig(dynr::PbrConfigFactory::createPbrConfig(configpath)),
                                                     mRoutingCore(mConfig,interfaceno),
                                                     mResponseHelper(responsehelper),
-                                                    mCommandRegex("^ws([1-9][0-9]{1,7})-gw([1-9][0-9]{1,4})\\.magicdomain\\.internal$") 
+                                                    mCommandRegex("^ws([1-9][0-9]{1,7})-gw([1-9][0-9]{1,4})\\.magicdomain\\.internal$"), 
+                                                    mCommand2Regex("^ws([1-9][0-9]{1,7})-clear\\.magicdomain\\.internal$")
 {
   server_start_receive();
 }
