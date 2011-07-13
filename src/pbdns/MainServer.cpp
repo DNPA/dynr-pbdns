@@ -71,14 +71,12 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
            dynr::Peer dns=mRoutingCore.lookup(clientno,queryname);
            std::string dnsip=dns;
            std::string bestip=dns.myBestIp();
-           DnsForwarder *forwarder=mForwarders[bestip];
-           if (forwarder == 0) {
+           if (mForwarders.find(bestip) == mForwarders.end()) {
              std::cerr << "Creating new forwarder for " << bestip << std::endl;
-             DnsForwarder *forwarder=new DnsForwarder(mIoService,mServerSocket,bestip);
-             mForwarders[bestip]=forwarder;
-           } else {
-             std::cerr << "Using existing forwarder for " << bestip << std::endl;
+             boost::shared_ptr<DnsForwarder> tmpforwarder(new DnsForwarder(mIoService,mServerSocket,bestip));
+             mForwarders[bestip]=tmpforwarder;
            }
+           boost::shared_ptr<DnsForwarder> forwarder=mForwarders[bestip];
            std::cerr << "Forwarding query to " << dnsip << std::endl;
            forwarder->forward(mRecvBuffer,insize,dnsip,queryid,mRemoteClient);
            std::cerr << "Done forwarding." << std::endl;
@@ -128,8 +126,4 @@ MainServer::MainServer(boost::asio::io_service& io_service,
 }
 
 MainServer::~MainServer() {
-  for (std::map<std::string, DnsForwarder * >::iterator it=mForwarders.begin(); it != mForwarders.end(); ++it){
-    delete it->second;
-  }
-    
 }

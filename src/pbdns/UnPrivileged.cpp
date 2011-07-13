@@ -8,12 +8,12 @@
 #include <iostream>
 
 UnPrivileged::UnPrivileged():mDroppedPriv(false),mIsChild(false) {
-   mDroppedPriv=true;
-   mIsChild=true;
-   return;
+   //Uncomment the following 3 lines to run in priviledged non daemon mode for debug purposes.
+   //mDroppedPriv=true;
+   //mIsChild=true;
+   //return;
    struct passwd *nobody=getpwnam("nobody");
    if (nobody) {
-      //Uncomment the following 3 lines in order to run in test mode and don't drop priviledges or go into background.
       uid_t nobody_uid= nobody->pw_uid;
       gid_t nobody_gid= nobody->pw_gid;
       if (setgid(nobody_gid) == 0) {

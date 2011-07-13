@@ -16,10 +16,8 @@ class cachemap {
          K mKey;
        public:
          entity(cachemap<K,V> *cmap,K &key):mCmap(cmap),mKey(key){
-            std::cerr << "cachemap::entity::entity(cmap," << key << ")" << std::endl;
          }
          ~entity() {
-            std::cerr << "cachemap::entity::~entity()" << std::endl;
          }
          //Cast operator to allow usage of square braced notation as rval.
          //  int x = foomap["bla"];
@@ -29,13 +27,10 @@ class cachemap {
          //Assignment operator for usage of square braced notation as lval.
          //   foomap["bla"] = 17;
          V  operator=(V val) {
-           std::cerr << "cachemap::entity::operator=" << std::endl;
            //Make sure we keep track of how many times we overwrite map[$key] so we don't delete vallues prematurely.
            if (mCmap->mMap.find(mKey) == mCmap->mMap.end()) {
-              std::cerr << "cachemap::entity::operator= : Survived + new." << std::endl;
               mCmap->mDoubles[mKey] = 1;
            } else  {
-              std::cerr << "cachemap::entity::operator= : Survived + found." << std::endl;
               mCmap->mDoubles[mKey] += 1;
            }
            //Set the new vallue for our key.
@@ -60,14 +55,11 @@ class cachemap {
          }
     };
     cachemap(size_t maxsize): mMaxSize(maxsize){
-        std::cerr << "cachemap::cachemap(" << maxsize << ")" << std::endl;
     }
     ~cachemap(){
-        std::cerr << "cachemap::~cachemap()" << std::endl;
     }
     //Square braces operator returns a helper object as to be usable both as rval and as lval.
     entity operator[](K key){
-       std::cerr << "cachemap::operator[](" <<key << ")" << std::endl;
        return entity(this,key); 
     };
     //Helper method to check if a key is still there.

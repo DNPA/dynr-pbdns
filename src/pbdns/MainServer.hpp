@@ -14,7 +14,7 @@ class MainServer {
     boost::asio::ip::udp::endpoint mRemoteClient;
     boost::shared_ptr<dynr::AbstractPbrConfig>  mConfig;
     dynr::PbRoutingCore mRoutingCore;
-    std::map<std::string, DnsForwarder * > mForwarders; 
+    std::map<std::string, boost::shared_ptr<DnsForwarder>  > mForwarders; 
     std::string queryString(size_t psize);
     std::string dnsid(size_t psize);
     DnsResponse &mResponseHelper;
