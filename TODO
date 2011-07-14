@@ -1,0 +1,7 @@
+* Commandline dbus client
+* Add postinstall script for adding user.
+* Run dbus service as non rout user.
+* Dbus service: check return IP for false (127.0.0.1).
+* Test + complete the forwarding part of pbdnsd
+* Run tests with commandline tool -> dbus service -> pbdnsd
+* Test the upstart config.
