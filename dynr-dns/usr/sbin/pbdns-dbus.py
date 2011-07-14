@@ -116,9 +116,26 @@ class DaemonManager(dbus.service.Object):
             return False
         rcode = dnsresponse.rcode
         if (rcode == 0):
+            #FIXME: check for 127.0.0.1 == false.
             return True
         else:
             return False
+    @dbus.service.method("nl.dnpa.pbr.DaemonManager",
+                        in_signature='s', out_signature='b')
+    def clear(self,workstation):
+        wsNum  = self.confighelper.getWsNum(workstation)
+        magicname = "ws" + str(wsNum) + "-clear.magicdomain.internal."
+        dnsrequest = dns.message.make_query(magicdnsname,dns.rdatatype.A,dns.rdataclass.IN)
+        dnsdIp=self.confighelper.findDnsdIp(workstation)
+        try:
+            dnsresponse=dns.query.udp(dnsrequest,dnsIp,2)
+        except dns.exception.Timeout:
+            return False
+        rcode = dnsresponse.rcode
+        if (rcode == 0):
+            #FIXME: check for 127.0.0.1 == false.
+            return True
+        return False
 
 if __name__ == '__main__':
     if os.system("/usr/bin/pbr-checkconfig.py"):
