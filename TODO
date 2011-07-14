@@ -1,4 +1,3 @@
-* Add postinstall script for adding user.
 * Run dbus service as non root user.
 * Dbus service: check return IP for false (127.0.0.1).
 * Test + complete the forwarding part of pbdnsd

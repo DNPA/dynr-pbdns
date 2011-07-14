@@ -11,12 +11,12 @@ UnPrivileged::UnPrivileged():mDroppedPriv(false),mIsChild(false) {
    //mDroppedPriv=true;
    //mIsChild=true;
    //return;
-   struct passwd *nobody=getpwnam("nobody");
-   if (nobody) {
-      uid_t nobody_uid= nobody->pw_uid;
-      gid_t nobody_gid= nobody->pw_gid;
-      if (setgid(nobody_gid) == 0) {
-        if (setuid(nobody_uid) == 0) {
+   struct passwd *pbdnsd_user=getpwnam("pbdnsd");
+   if (pbdnsd_user) {
+      uid_t pbdnsd_user_uid= pbdnsd_user->pw_uid;
+      gid_t pbdnsd_user_gid= pbdnsd_user->pw_gid;
+      if (setgid(pbdnsd_user_gid) == 0) {
+        if (setuid(pbdnsd_user_uid) == 0) {
           mDroppedPriv=true;
           pid_t pid;
           pid = fork();

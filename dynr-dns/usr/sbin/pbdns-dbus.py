@@ -35,6 +35,7 @@ import IPy
 import daemon
 import dns.query
 import dns.message
+import pwd
 
 class ConfigHelper:
     def __init__(self,config):
@@ -140,7 +141,11 @@ class DaemonManager(dbus.service.Object):
 if __name__ == '__main__':
     if os.system("/usr/bin/pbr-checkconfig.py"):
         sys.exit(1)
-    with daemon.DaemonContext():
+    uid = gid = None
+    uid = pwd.getpwnam("pbdnsdbs").pw_uid
+    gid = pwd.getpwnam("pbdnsdbs").pw_gid
+    print uid, gid
+    with daemon.DaemonContext(uid=uid, gid=gid):
         infile=open("/etc/pbrouting.json","r")
         config=json.load(infile)
         infile.close()    

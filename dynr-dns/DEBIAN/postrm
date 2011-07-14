@@ -1,0 +1,7 @@
+#!/bin/bash
+echo Deleting user pbdnsd
+/usr/sbin/userdel  pbdnsd
+echo Deleting user pbdnsdbs
+/usr/sbin/userdel  pbdnsdbs
+echo deleting /etc/pbdns.secret
+rm /etc/pbdns.secret
