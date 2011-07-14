@@ -4,6 +4,7 @@
 #include <boost/regex.hpp>
 #include "DnsResponse.hpp" 
 DnsResponse::DnsResponse(std::string trueip,std::string falseip){
+        //Convert the two ascii IP numbers into arrays we can use when generating responses.
         //FIXME: fix this code to use boost::asio IP address parsing.        
         boost::regex ipregex("^((\\d|\\d\\d|[0-1]\\d\\d|2[0-4]\\d|25[0-5])\\.(\\d|\\d\\d|[0-1]\\d\\d|2[0-4]\\d|25[0-5])\\.(\\d|\\d\\d|[0-1]\\d\\d|2[0-4]\\d|25[0-5])\\.(\\d|\\d\\d|[0-1]\\d\\d|2[0-4]\\d|25[0-5]))$");
         if (boost::regex_match(trueip,ipregex) == false) {

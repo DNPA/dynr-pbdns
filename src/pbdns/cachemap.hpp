@@ -2,6 +2,9 @@
 #define _PBDNS_CACHE_MAP_HPP
 #include <map>
 #include <deque>
+/* The cachemap is a simple and non optimized implemtation of a chaching map.
+   A chachemap will hold only the N most recently accessed entities and will drop older
+   entities that it considders as having expired. */
 template <typename K,typename V>
 class cachemap {
     std::map<K,V> mMap; //The real map.

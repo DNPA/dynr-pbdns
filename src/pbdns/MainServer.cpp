@@ -21,12 +21,13 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
      u_int32_t clientip=mRemoteClient.address().to_v4().to_ulong(); 
      u_int32_t clientno = mRoutingCore.asNum(clientip);    
      std::string queryname=queryString(insize);
-     std::string queryid="";
      if (insize > 1) {
+       //The dbus pbdns service will send us DNS queries with a magic domain, we need to handle these differently.
        if (boost::regex_match(queryname,mMagicDomainRegex)) {
          syslog(LOG_NOTICE, "command packet '%s' received.", queryname.c_str() );
          bool ok=false;
          boost::smatch what;
+         //Check if the query has one of two valid command syntaxes.
          if ((boost::regex_match(queryname,what,mCommandRegex,boost::match_extra))|| (boost::regex_match(queryname,what,mCommand2Regex,boost::match_extra))) {
            ok=true;
            size_t ws=0;
@@ -41,6 +42,7 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
               ok=false;
            }
            if (ok) {
+                //Call the appropriate command on the routing core.
                 if (what.size() == 3) {
                   ok=mRoutingCore.updateRouting(ws,gw);
                 } else {
@@ -55,6 +57,7 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
          }  else {
             syslog(LOG_ERR, "Command packet '%s' has an invalid format.", queryname.c_str() );
          }  
+         //Sens out a direct true/false response to the dbus service. 
          mServerSocket.async_send_to(boost::asio::buffer(mResponseHelper.reply(mRecvBuffer,insize,ok),
                                                            insize+16),
                                        mRemoteClient,
@@ -65,16 +68,21 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
                                                   )
                                        );
        } else {
-           std::string queryid=boost::lexical_cast<std::string>((unsigned int) (unsigned char) mRecvBuffer[0]) + ":" + boost::lexical_cast<std::string>((unsigned int) (unsigned char) mRecvBuffer[1]) + ":" + queryname;
+           //If its not the dbus service sending commands than we must forward it somewhere.
+           //Ask the routing core what peer to use.
            dynr::Peer dns=mRoutingCore.lookup(clientno,queryname);
            std::string dnsip=dns;
            std::string bestip=dns.myBestIp();
+           //Check if we already have a forwarder for the network we need to forward on.
            if (mForwarders.find(bestip) == mForwarders.end()) {
+             //If on, than create one and register it with the boost::asio io service.
              boost::shared_ptr<DnsForwarder> tmpforwarder(new DnsForwarder(mIoService,mServerSocket,bestip));
              mForwarders[bestip]=tmpforwarder;
            }
+           //Get the propper forwarder.
            boost::shared_ptr<DnsForwarder> forwarder=mForwarders[bestip];
-           forwarder->forward(mRecvBuffer,insize,dnsip,queryid,mRemoteClient);
+           //Ask the propper forwarder to forward the packet to the found dns IP.
+           forwarder->forward(mRecvBuffer,insize,dnsip,mRemoteClient);
        }
      } else {
         syslog(LOG_WARNING, "Tiny packet, unable to get uniqueu id, ignoring.", queryname.c_str() );

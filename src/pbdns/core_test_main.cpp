@@ -5,7 +5,7 @@
 #include "Peer.hpp"
 #include "PbRoutingCore.hpp"
 #include <boost/lexical_cast.hpp>
-
+//This file holds some testing code used to test the policy/config core in a non networked way.
 std::string peerString(dynr::Peer &peer){
   bool valid=peer;
   if (valid) {
