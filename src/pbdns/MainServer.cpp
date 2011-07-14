@@ -4,8 +4,7 @@
 #include "PbrConfigFactory.hpp"
 #include "MainServer.hpp"
 #include <boost/regex.hpp>
-#include <iostream>
-
+#include <syslog.h>
 
 void MainServer::server_start_receive() {
   mServerSocket.async_receive_from( boost::asio::buffer(mRecvBuffer),
@@ -19,44 +18,45 @@ void MainServer::server_start_receive() {
 
 void MainServer::handle_receive_from_client(const boost::system::error_code& error,std::size_t insize/*bytes_transferred*/) {
   if (!error || error == boost::asio::error::message_size) {
-     std::cerr << "Received packet from client." << std::endl;
      u_int32_t clientip=mRemoteClient.address().to_v4().to_ulong(); 
      u_int32_t clientno = mRoutingCore.asNum(clientip);    
      std::string queryname=queryString(insize);
-     std::cerr << "queryname = '" << queryname << "'" << std::endl;
      std::string queryid="";
      if (insize > 1) {
-       boost::smatch what;
-       if ((boost::regex_match(queryname,what,mCommandRegex,boost::match_extra))|| (boost::regex_match(queryname,what,mCommandRegex,boost::match_extra))) {
-           bool ok=true;
+       if (boost::regex_match(queryname,mMagicDomainRegex)) {
+         syslog(LOG_NOTICE, "command packet '%s' received.", queryname.c_str() );
+         bool ok=false;
+         boost::smatch what;
+         if ((boost::regex_match(queryname,what,mCommandRegex,boost::match_extra))|| (boost::regex_match(queryname,what,mCommand2Regex,boost::match_extra))) {
+           ok=true;
            size_t ws=0;
            size_t gw=0;
            try {
-              ws=boost::lexical_cast<size_t>(what[0]);
-              if (what.size() == 2) {
-                 gw=boost::lexical_cast<size_t>(what[1]);
+              ws=boost::lexical_cast<size_t>(what[1]);
+              if (what.size() == 3) {
+                 gw=boost::lexical_cast<size_t>(what[2]);
               }
            } catch (std::exception& e) {
-              std::cerr << "Problem lexically casting workstation or gateway number." << std::endl;
+              syslog(LOG_ERR, "Error while parsing command packet '%s'. This must be a bug, please report to the author.", queryname.c_str() );
               ok=false;
            }
            if (ok) {
-                if (what.size() == 2) {
-                  std::cerr << "Asking routing core to update gateway for " << ws << " to " << gw << std::endl;
+                if (what.size() == 3) {
                   ok=mRoutingCore.updateRouting(ws,gw);
                 } else {
-                  std::cerr << "Flushing gateway for " << ws << std::endl;
                   mRoutingCore.clear(ws);
                 }
                 if (ok) {
-                   std::cerr << "Command succeeded." << std::endl;
+                   syslog(LOG_NOTICE, "Command '%s' SUCCEEDED.", queryname.c_str() );
                 } else {
-                   std::cerr << "Command failed." << std::endl;
+                   syslog(LOG_ERR, "Command '%s' FAILED.", queryname.c_str() );
                 }
            }
-           std::cerr << "Sending response " << ok << std::endl;
-           mServerSocket.async_send_to(boost::asio::buffer(mResponseHelper.reply(mRecvBuffer,insize,false),
-                                                           insize+14),
+         }  else {
+            syslog(LOG_ERR, "Command packet '%s' has an invalid format.", queryname.c_str() );
+         }  
+         mServerSocket.async_send_to(boost::asio::buffer(mResponseHelper.reply(mRecvBuffer,insize,ok),
+                                                           insize+16),
                                        mRemoteClient,
                                        boost::bind(&MainServer::handle_send,
                                                    this,
@@ -65,24 +65,19 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
                                                   )
                                        );
        } else {
-           std::cerr << "Not a command, forwarding." << std::endl;
            std::string queryid=boost::lexical_cast<std::string>((unsigned int) (unsigned char) mRecvBuffer[0]) + ":" + boost::lexical_cast<std::string>((unsigned int) (unsigned char) mRecvBuffer[1]) + ":" + queryname;
-           std::cerr << "Query id = '" << queryid << "'" << std::endl;
            dynr::Peer dns=mRoutingCore.lookup(clientno,queryname);
            std::string dnsip=dns;
            std::string bestip=dns.myBestIp();
            if (mForwarders.find(bestip) == mForwarders.end()) {
-             std::cerr << "Creating new forwarder for " << bestip << std::endl;
              boost::shared_ptr<DnsForwarder> tmpforwarder(new DnsForwarder(mIoService,mServerSocket,bestip));
              mForwarders[bestip]=tmpforwarder;
            }
            boost::shared_ptr<DnsForwarder> forwarder=mForwarders[bestip];
-           std::cerr << "Forwarding query to " << dnsip << std::endl;
            forwarder->forward(mRecvBuffer,insize,dnsip,queryid,mRemoteClient);
-           std::cerr << "Done forwarding." << std::endl;
        }
      } else {
-        std::cerr << "Tiny packet, unable to get uniqueu id, ignoring." << std::endl;
+        syslog(LOG_WARNING, "Tiny packet, unable to get uniqueu id, ignoring.", queryname.c_str() );
      }
   }
   server_start_receive();
@@ -119,11 +114,14 @@ MainServer::MainServer(boost::asio::io_service& io_service,
                                                     mConfig(dynr::PbrConfigFactory::createPbrConfig(configpath)),
                                                     mRoutingCore(mConfig,interfaceno),
                                                     mResponseHelper(responsehelper),
-                                                    mCommandRegex("^ws([1-9][0-9]{1,7})-gw([1-9][0-9]{1,4})\\.magicdomain\\.internal$"), 
-                                                    mCommand2Regex("^ws([1-9][0-9]{1,7})-clear\\.magicdomain\\.internal$")
+                                                    mCommandRegex("^ws([1-9][0-9]{0,7})-gw([1-9][0-9]{0,4})\\.magicdomain\\.internal$"), 
+                                                    mCommand2Regex("^ws([1-9][0-9]{0,7})-clear\\.magicdomain\\.internal$"),
+					            mMagicDomainRegex("(.*\\.)?magicdomain\\.internal$")
 {
+  openlog("pbdnsd",LOG_PID,LOG_USER);
   server_start_receive();
 }
 
 MainServer::~MainServer() {
+  closelog();
 }

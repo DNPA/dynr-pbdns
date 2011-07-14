@@ -2,7 +2,6 @@
 #define _PBDNS_CACHE_MAP_HPP
 #include <map>
 #include <deque>
-#include <iostream>
 template <typename K,typename V>
 class cachemap {
     std::map<K,V> mMap; //The real map.
