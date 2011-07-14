@@ -5,7 +5,7 @@ Essential: no
 Version: 0.9.0-2
 Architecture: amd64
 Installed-Size: 10
-Depends: python-dbus,python-daemon,dbus,upstart,dynr-pbrouting,libboost-system-dev,libboost-regex-dev
+Depends: python-dbus,python-daemon,dbus,upstart,dynr-pbrouting,libboost-system-dev,libboost-regex-dev,jsonme
 Recommends: dynr-web
 Conflicts: bind9,ldapdns,dnsmasq-base
 Maintainer: Rob@KLPD <rob@dnpa.nl>
