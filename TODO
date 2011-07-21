@@ -1,6 +1,6 @@
+* Code review C++ code.
 * Dbus service: check return IP for false (127.0.0.1).
-* Look at cost (time to implement)  of returning 'thatsme' when routing is set to parkip.
-* Code review.
+* Code review python code.
 * Test + complete the forwarding part of pbdnsd
 * Run tests with commandline tool -> dbus service -> pbdnsd
 * Test the upstart config.

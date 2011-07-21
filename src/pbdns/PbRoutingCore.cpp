@@ -27,6 +27,25 @@ namespace dynr {
        dynr::Peer parkpeer=mWsNetConfig.gateway(parkip);
        return parkpeer;
     }
+    bool PbRoutingCore::parked(size_t wsnum,std::string dnsname){
+       dynr::Peer localdns=(*mConfig)[dnsname];
+       if (localdns==true) {
+           return false;
+       }
+       size_t gwnum=mPolicies[wsnum];
+       dynr::Peer gw=mWsNetConfig.gateway(gwnum);
+       if (gw == true) {
+          std::string parkip=mConfig->parkIp();
+          std::string peerip=gw;
+          if (peerip == parkip) {
+            return true;
+          } else {
+            return false;
+          }
+       } else {
+          return true;
+       }
+    }
     void PbRoutingCore::clear(size_t wsnum) {
        mPolicies[wsnum]=0;
        mPolicies.erase(wsnum);

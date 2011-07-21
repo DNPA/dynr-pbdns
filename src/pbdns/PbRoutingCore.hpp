@@ -19,6 +19,8 @@ namespace  dynr {
         bool updateRouting(size_t wsnum,size_t gwnum); 
         //Lookup what dns server to forward to using what local IP to forward from.
         Peer lookup(size_t wsnum,std::string dnsname);
+        //Lookup if the query would result in forwarding to parkip (if so we should send out a 'thats-me' response.
+        bool parked(size_t wsnum,std::string dnsname);
         //Clear the routing policy for a workstation.
         void clear(size_t wsnum);
         //Get the ip id from an ip address.

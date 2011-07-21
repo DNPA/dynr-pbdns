@@ -68,21 +68,34 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
                                                   )
                                        );
        } else {
-           //If its not the dbus service sending commands than we must forward it somewhere.
-           //Ask the routing core what peer to use.
-           dynr::Peer dns=mRoutingCore.lookup(clientno,queryname);
-           std::string dnsip=dns;
-           std::string bestip=dns.myBestIp();
-           //Check if we already have a forwarder for the network we need to forward on.
-           if (mForwarders.find(bestip) == mForwarders.end()) {
-             //If on, than create one and register it with the boost::asio io service.
-             boost::shared_ptr<DnsForwarder> tmpforwarder(new DnsForwarder(mIoService,mServerSocket,bestip));
-             mForwarders[bestip]=tmpforwarder;
+           if (mRoutingCore.parked(clientno,queryname)) {
+               //If the dns we would forward to is the park ip, than we asume whe have an A query and respond with a 'thats-me' response.
+               mServerSocket.async_send_to(boost::asio::buffer(mResponseHelper.reply(mRecvBuffer,insize,true),
+                                                               insize+16),
+                                           mRemoteClient,
+                                           boost::bind(&MainServer::handle_send,
+                                                       this,
+                                                       boost::asio::placeholders::error,
+                                                       boost::asio::placeholders::bytes_transferred
+                                                      )
+                                           );
+           } else {
+               //If its not the dbus service sending commands than we must forward it somewhere.
+               //Ask the routing core what peer to use.
+               dynr::Peer dns=mRoutingCore.lookup(clientno,queryname);
+               std::string dnsip=dns;
+               std::string bestip=dns.myBestIp();
+               //Check if we already have a forwarder for the network we need to forward on.
+               if (mForwarders.find(bestip) == mForwarders.end()) {
+                 //If on, than create one and register it with the boost::asio io service.
+                 boost::shared_ptr<DnsForwarder> tmpforwarder(new DnsForwarder(mIoService,mServerSocket,bestip));
+                 mForwarders[bestip]=tmpforwarder;
+               }
+               //Get the propper forwarder.
+               boost::shared_ptr<DnsForwarder> forwarder=mForwarders[bestip];
+               //Ask the propper forwarder to forward the packet to the found dns IP.
+               forwarder->forward(mRecvBuffer,insize,dnsip,mRemoteClient);
            }
-           //Get the propper forwarder.
-           boost::shared_ptr<DnsForwarder> forwarder=mForwarders[bestip];
-           //Ask the propper forwarder to forward the packet to the found dns IP.
-           forwarder->forward(mRecvBuffer,insize,dnsip,mRemoteClient);
        }
      } else {
         syslog(LOG_WARNING, "Tiny packet, unable to get uniqueu id, ignoring.", queryname.c_str() );
