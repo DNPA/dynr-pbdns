@@ -117,7 +117,8 @@ class DaemonManager(dbus.service.Object):
             return False
         rcode = dnsresponse.rcode
         if (rcode == 0):
-            #FIXME: check for 127.0.0.1 == false.
+            if ((len(dnsresponse.answer) == 0) or (len(dnsresponse.answer[0].items) == 0) or (dnsresponse.answer[0].items[0].address == '127.0.0.1')):
+                return False 
             return True
         else:
             return False
@@ -134,7 +135,8 @@ class DaemonManager(dbus.service.Object):
             return False
         rcode = dnsresponse.rcode
         if (rcode == 0):
-            #FIXME: check for 127.0.0.1 == false.
+            if ((len(dnsresponse.answer) == 0) or (len(dnsresponse.answer[0].items) == 0) or (dnsresponse.answer[0].items[0].address == '127.0.0.1')):
+                return False
             return True
         return False
 
@@ -144,7 +146,6 @@ if __name__ == '__main__':
     uid = gid = None
     uid = pwd.getpwnam("pbdnsdbs").pw_uid
     gid = pwd.getpwnam("pbdnsdbs").pw_gid
-    print uid, gid
     with daemon.DaemonContext(uid=uid, gid=gid):
         infile=open("/etc/pbrouting.json","r")
         config=json.load(infile)
