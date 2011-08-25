@@ -1,8 +1,8 @@
 #!/bin/bash
-echo Deleting user pbdnsd
-/usr/sbin/userdel  pbdnsd
 echo Deleting user pbdnsdbs
 /usr/sbin/userdel  pbdnsdbs
+echo Deleting user pbdnsd
+/usr/sbin/userdel  pbdnsd
 echo Deleting manager group
 /usr/sbin/groupdel  pbdnsman
 echo deleting /etc/pbdns.secret

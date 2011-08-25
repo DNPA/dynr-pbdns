@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include "UnPrivileged.hpp"
+#include <iostream>
 
 UnPrivileged::UnPrivileged():mDroppedPriv(false),mIsChild(false) {
    //Uncomment the following 3 lines to run in priviledged non daemon mode for debug purposes.
@@ -36,6 +37,8 @@ UnPrivileged::UnPrivileged():mDroppedPriv(false),mIsChild(false) {
           }
         }
       }            
+   } else {
+      std::cerr << "No pbdnsd user to run under." << std::endl;
    }
 }
 bool UnPrivileged::operator()() {

@@ -36,6 +36,7 @@ import daemon
 import dns.query
 import dns.message
 import pwd
+import syslog
 
 class ConfigHelper:
     def __init__(self,config):
@@ -79,14 +80,13 @@ class ConfigHelper:
             gwip=IPy.IP(gatewayip)
         except ValueError:
             return None
-        gwnet=self.config["gateways"]["net"]
-        if not gwnet.overlaps(gwip):
-            return None
-        num=gwip.ip - gwnet.ip
-        return num
+        for gateway in self.config["gateways"]:
+            if gateway["ip"] == gatewayip:
+                return gateway["tableno"]
+        return None
     def findDnsdIP(self,wsip):
         try:
-            wsip=IPy.IP(workstationip)
+            wsip=IPy.IP(wsip)
         except ValueError:
             return None
         for clientnet in self.config["devices"]["clients"]:
@@ -95,6 +95,7 @@ class ConfigHelper:
                 dnsip=clientnet["ip"]
                 return dnsip
         return None
+        
 
 class DaemonManager(dbus.service.Object):
     def __init__(self,object_path,config):
@@ -104,29 +105,33 @@ class DaemonManager(dbus.service.Object):
     @dbus.service.method("nl.dnpa.pbdns.DaemonManager",in_signature='ss', out_signature='b')
     def setGateway(self, workstation, gateway):
         if (not self.confighelper.checkAllowed(workstation, gateway)):
+            syslog.syslog(syslog.LOG_ERR,'setGateway : not allowed to set gateway to ' + str(gateway) + " for workstation "+ str(workstation) )
             return False
         wsNum  = self.confighelper.getWsNum(workstation)
         rtrNum = self.confighelper.getRtrNum(gateway)
         magicdnsname = "ws" + str(wsNum) + "-gw" + str(rtrNum) +  ".magicdomain.internal."
         dnsrequest = dns.message.make_query(magicdnsname,dns.rdatatype.A,dns.rdataclass.IN)
-        dnsdIp=self.confighelper.findDnsdIp(workstation)
+        dnsIp=self.confighelper.findDnsdIP(workstation)
         try:
             dnsresponse=dns.query.udp(dnsrequest,dnsIp,2)
         except dns.exception.Timeout:
+            syslog.syslog(syslog.LOG_ERR,'setGateway : timeout while waiting for reply from dns server ' + str(dnsIp) + " for the query " + magicdnsname )
             return False
-        rcode = dnsresponse.rcode
+        rcode = dnsresponse.rcode()
         if (rcode == 0):
             if ((len(dnsresponse.answer) == 0) or (len(dnsresponse.answer[0].items) == 0) or (dnsresponse.answer[0].items[0].address == '127.0.0.1')):
+                syslog.syslog(syslog.LOG_ERR,'setGateway : no YES ip as response from server ' + str(dnsIp) + ' for ' + magicdnsname )
                 return False 
             return True
         else:
+            syslog.syslog(syslog.LOG_ERR,'setGateway : rcode ' + str(rcode) +  ' != 0 from ' + str(dnsIp) + ' for the query ' + magicdnsname)
             return False
     @dbus.service.method("nl.dnpa.pbdns.DaemonManager",in_signature='s', out_signature='b')
     def clear(self,workstation):
         wsNum  = self.confighelper.getWsNum(workstation)
         magicname = "ws" + str(wsNum) + "-clear.magicdomain.internal."
         dnsrequest = dns.message.make_query(magicdnsname,dns.rdatatype.A,dns.rdataclass.IN)
-        dnsdIp=self.confighelper.findDnsdIp(workstation)
+        dnsIp=self.confighelper.findDnsdIP(workstation)
         try:
             dnsresponse=dns.query.udp(dnsrequest,dnsIp,2)
         except dns.exception.Timeout:
@@ -145,9 +150,11 @@ if __name__ == '__main__':
     uid = pwd.getpwnam("pbdnsdbs").pw_uid
     gid = pwd.getpwnam("pbdnsdbs").pw_gid
     with daemon.DaemonContext(uid=uid, gid=gid):
+        syslog.openlog()
+        syslog.syslog(syslog.LOG_ERR,'pbdns-dbus started')
         infile=open("/etc/pbrouting.json","r")
         config=json.load(infile)
-        infile.close()    
+        infile.close()
         dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
         name = dbus.service.BusName("nl.dnpa.pbdns.DaemonManager", dbus.SystemBus())
         object = DaemonManager('/DaemonManager',config)
