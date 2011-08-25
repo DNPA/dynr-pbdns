@@ -129,18 +129,21 @@ class DaemonManager(dbus.service.Object):
     @dbus.service.method("nl.dnpa.pbdns.DaemonManager",in_signature='s', out_signature='b')
     def clear(self,workstation):
         wsNum  = self.confighelper.getWsNum(workstation)
-        magicname = "ws" + str(wsNum) + "-clear.magicdomain.internal."
+        magicdnsname = "ws" + str(wsNum) + "-clear.magicdomain.internal."
         dnsrequest = dns.message.make_query(magicdnsname,dns.rdatatype.A,dns.rdataclass.IN)
         dnsIp=self.confighelper.findDnsdIP(workstation)
         try:
             dnsresponse=dns.query.udp(dnsrequest,dnsIp,2)
         except dns.exception.Timeout:
+            syslog.syslog(syslog.LOG_ERR,'clear : timeout while waiting for reply from dns server ' + str(dnsIp) + " for the query " + magicdnsname )
             return False
-        rcode = dnsresponse.rcode
+        rcode = dnsresponse.rcode()
         if (rcode == 0):
             if ((len(dnsresponse.answer) == 0) or (len(dnsresponse.answer[0].items) == 0) or (dnsresponse.answer[0].items[0].address == '127.0.0.1')):
+                syslog.syslog(syslog.LOG_ERR,'clear : no YES ip as response from server ' + str(dnsIp) + ' for ' + magicdnsname )
                 return False
             return True
+        syslog.syslog(syslog.LOG_ERR,'setGateway : rcode ' + str(rcode) +  ' != 0 from ' + str(dnsIp) + ' for the query ' + magicdnsname)
         return False
 
 if __name__ == '__main__':
