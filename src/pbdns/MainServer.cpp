@@ -88,8 +88,13 @@ void MainServer::handle_receive_from_client(const boost::system::error_code& err
                //Check if we already have a forwarder for the network we need to forward on.
                if (mForwarders.find(bestip) == mForwarders.end()) {
                  //If on, than create one and register it with the boost::asio io service.
-                 boost::shared_ptr<DnsForwarder> tmpforwarder(new DnsForwarder(mIoService,mServerSocket,bestip));
-                 mForwarders[bestip]=tmpforwarder;
+                 try {
+                    boost::shared_ptr<DnsForwarder> tmpforwarder(new DnsForwarder(mIoService,mServerSocket,bestip));
+                    mForwarders[bestip]=tmpforwarder;
+                 } catch (std::exception& e) {
+                    syslog(LOG_ERR, "FATAL config error, %s is not an IP address we can bind on",bestip.c_str());
+                    throw ;
+                 }
                }
                //Get the propper forwarder.
                boost::shared_ptr<DnsForwarder> forwarder=mForwarders[bestip];
