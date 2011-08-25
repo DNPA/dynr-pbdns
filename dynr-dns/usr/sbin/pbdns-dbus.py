@@ -101,8 +101,7 @@ class DaemonManager(dbus.service.Object):
         name = dbus.service.BusName("nl.dnpa.pbdns.DaemonManager", dbus.SystemBus())
         self.confighelper=ConfigHelper(config)
         dbus.service.Object.__init__(self, dbus.SystemBus(), object_path)
-    @dbus.service.method("nl.dnpa.pbr.DaemonManager",
-                         in_signature='ss', out_signature='b')
+    @dbus.service.method("nl.dnpa.pbdns.DaemonManager",in_signature='ss', out_signature='b')
     def setGateway(self, workstation, gateway):
         if (not self.confighelper.checkAllowed(workstation, gateway)):
             return False
@@ -122,8 +121,7 @@ class DaemonManager(dbus.service.Object):
             return True
         else:
             return False
-    @dbus.service.method("nl.dnpa.pbr.DaemonManager",
-                        in_signature='s', out_signature='b')
+    @dbus.service.method("nl.dnpa.pbdns.DaemonManager",in_signature='s', out_signature='b')
     def clear(self,workstation):
         wsNum  = self.confighelper.getWsNum(workstation)
         magicname = "ws" + str(wsNum) + "-clear.magicdomain.internal."

@@ -3,7 +3,9 @@ echo Creating new user pbdnsd
 /usr/sbin/useradd -d / -r -U -c "Dynamic Router Dns Daemon" pbdnsd
 echo Creating new user pbdnsdbs
 /usr/sbin/useradd -d / -r -c "Dynamic Router Dns Dbus proxy" -g pbdnsd pbdnsdbs
-
+echo Creating manager group
+/usr/sbin/groupadd -r pbdnsman
+echo Creating secret for use as magic domain key.
 /bin/dd if=/dev/urandom count=1 bs=1024| /usr/bin/sha1sum |/bin/sed -e 's/ .*//' >/etc/pbdns.secret
 chmod 0050 /etc/pbdns.secret
 chgrp pbdnsd /etc/pbdns.secret
