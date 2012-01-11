@@ -124,7 +124,7 @@ class DaemonManager(dbus.service.Object):
                 return False 
             return True
         else:
-            syslog.syslog(syslog.LOG_ERR,'setGateway : rcode ' + str(rcode) +  ' != 0 from ' + str(dnsIp) + ' for the query ' + magicdnsname)
+            syslog.syslog(syslog.LOG_ERR,'setGateway (1): rcode ' + str(rcode) +  ' != 0 from ' + str(dnsIp) + ' for the query ' + magicdnsname)
             return False
     @dbus.service.method("nl.dnpa.pbdns.DaemonManager",in_signature='s', out_signature='b')
     def clear(self,workstation):
@@ -143,7 +143,7 @@ class DaemonManager(dbus.service.Object):
                 syslog.syslog(syslog.LOG_ERR,'clear : no YES ip as response from server ' + str(dnsIp) + ' for ' + magicdnsname )
                 return False
             return True
-        syslog.syslog(syslog.LOG_ERR,'setGateway : rcode ' + str(rcode) +  ' != 0 from ' + str(dnsIp) + ' for the query ' + magicdnsname)
+        syslog.syslog(syslog.LOG_ERR,'clearGateway (2): rcode ' + str(rcode) +  ' != 0 from ' + str(dnsIp) + ' for the query ' + magicdnsname)
         return False
 
 if __name__ == '__main__':
