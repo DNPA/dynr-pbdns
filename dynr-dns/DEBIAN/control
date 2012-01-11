@@ -7,7 +7,8 @@ Architecture: amd64
 Installed-Size: 10
 Depends: python-dbus,python-daemon,dbus,upstart,dynr-pbrouting,libboost-system-dev,libboost-regex-dev,jsonme++
 Recommends: dynr-web
-Conflicts: bind9,ldapdns,dnsmasq-base
+Conflicts: bind9,ldapdns,dnsmasq-base,pdns-server,pdns
+Replaces: bind9,ldapdns,dnsmasq-base,pdns-server,pdns
 Maintainer: Rob@KLPD <rob@dnpa.nl>
 Description: The dns subsystem of the dynr (dynamic router) system.
  The dynr (dynamic router) is a simple web based gateway selection tool. 
