@@ -1,5 +1,5 @@
 #!/usr/bin/python
-
+#
 # Copyright (C) 2004-2006 Red Hat Inc. <http://www.redhat.com/>
 # Copyright (C) 2005-2007 Collabora Ltd. <http://www.collabora.co.uk/>
 # Copyright (C) 2011 Dutch national police agency (KLPD)
@@ -104,6 +104,7 @@ class DaemonManager(dbus.service.Object):
         dbus.service.Object.__init__(self, dbus.SystemBus(), object_path)
     @dbus.service.method("nl.dnpa.pbdns.DaemonManager",in_signature='ss', out_signature='b')
     def setGateway(self, workstation, gateway):
+        syslog.syslog(syslog.LOG_ERR,'setGateway called for gateway ' + str(gateway) + " and workstation "+ str(workstation) )
         if (not self.confighelper.checkAllowed(workstation, gateway)):
             syslog.syslog(syslog.LOG_ERR,'setGateway : not allowed to set gateway to ' + str(gateway) + " for workstation "+ str(workstation) )
             return False
@@ -128,6 +129,7 @@ class DaemonManager(dbus.service.Object):
             return False
     @dbus.service.method("nl.dnpa.pbdns.DaemonManager",in_signature='s', out_signature='b')
     def clear(self,workstation):
+        syslog.syslog(syslog.LOG_ERR,"clearGateway called for workstation "+ str(workstation) )
         wsNum  = self.confighelper.getWsNum(workstation)
         magicdnsname = "ws" + str(wsNum) + "-clear.magicdomain.internal."
         dnsrequest = dns.message.make_query(magicdnsname,dns.rdatatype.A,dns.rdataclass.IN)
@@ -152,8 +154,10 @@ if __name__ == '__main__':
     uid = gid = None
     uid = pwd.getpwnam("pbdnsdbs").pw_uid
     gid = pwd.getpwnam("pbdnsdbs").pw_gid
+    syslog.openlog("pbdns-dbus.py")
+    syslog.syslog(syslog.LOG_ERR,str(uid)+":"+str(gid)+" starting daemon")
     with daemon.DaemonContext(uid=uid, gid=gid):
-        syslog.openlog()
+        #syslog.openlog()
         syslog.syslog(syslog.LOG_ERR,'pbdns-dbus started')
         infile=open("/etc/pbrouting.json","r")
         config=json.load(infile)
