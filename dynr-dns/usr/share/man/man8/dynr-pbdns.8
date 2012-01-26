@@ -1,0 +1,71 @@
+.Dd June 23, 2011
+.Os LINUX
+.Dt DYNR-PBDNS  8 URM
+.Sh NAME
+dynr-pbdns
+.Nd
+Dynr: Policy based DNS proxy.
+.Sh SYNOPSIS
+\fB pbdnsd\fR
+
+\fB pbdns-dbus.py\fR
+
+\fB pbdnsd-start\fR
+
+\fB pbr-cleardnsgateway.py\fR
+
+\fB pbr-setdnsgateway.py\fR
+
+.Sh DESCRIPTION
+
+A dynr dynamic router system is a router system that sits between a network with multiple 
+internet routers and a network with multiple workstations, and allows the people working
+on the workstations to pick and change lines according to their personal preferences and/or
+according to the need of the moment. A dynr consists out of several subsystems, the policy 
+based routing core (dynr-pbrouting), a web interface (dynr-web) and a dynamic policy based 
+dns proxy (dynr-dns). 
+
+The policy DNS proxy subsystem of the dynamic router provides tools and scripts for 
+starting up, running and administrating the DNS related part of a dynamic router system.
+
+Just like the rest of the dynamic router system, the dns core will get its configuration 
+from the  /etc/pbrouting.json configuration file. You should change this file according to your
+needs respecting the DNS configuration. Once you are hapy with your configuration, you should 
+use the tool pbr-checkconfig.py to check the full validity of your config.
+
+At system startup, dynr-pbrouting will run the pbrdns-startup.py script in order
+to start the different processes that make up the DNS subsystem. It will this start up
+pbdns-dbus.py, a dbus service for allowing the dynr-web subsystem of the dynamic router to change
+the DNS proxying policy for any given workstation. It will also start up an instance of the
+pbdnds daemon for each of the client networks.
+
+The dynr-pbdns package also contains command-line tools for manualy changing the DNS policy
+for a given workstation. The pbr-setdnsgateway.py script allows any user in the pbrgwman group
+to set the gateway that DNS queries are by default forwarded to for a given client. 
+The pbr-cleardnsgateway.py script allows that same user to set a given client as offline.
+A clinet that is marked as offline will by default get all DNS A queries resolved to the IP
+address of the dynamic router on the network that the client lives on. This strategy will for
+HTTP result in all web trafic for that client being redirected to the dynr-web sub system,
+that will than allow the client to change its routing and DNS proxying policies appropriately.
+
+
+Please note that after adding your user to this group, you may have to restart dbus, log out 
+and log in again before the dbus will allow you to use the dbus service with this tool.
+
+.Sh ENVIRONMENT
+The dynr-pbrouting package depends on a system that uses both the dbus and the upstart system.
+It has been tested on ubuntu 10.4 and 11.4. If you are successfully running dynr-pbrouting on any
+other distribution or version, or are having problems running it on any such system, please notify
+the author.
+
+.Sh FILES
+/etc/pbrouting.json  
+.\" .Sh EXAMPLES
+.Sh SEE ALSO
+.PP
+\fBpbrouting.json\fR(5) \fBdynr-web\fR(1) \fBdynr-dns\fR(1) 
+.\" .Sh STANDARDS
+.Sh HISTORY
+This package is derived from the original (unpublished) dynrlite system.
+.Sh AUTHORS
+This manual page was written  by  Rob Meijer <rob@dnpa.nl>, for the GNU/Linux Ubuntu system
